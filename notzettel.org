@@ -1,0 +1,105 @@
+#+STARTUP: logdrawer
+* IDs / titles / files
+** DONE Generate ID
+   Generate an id using format time string and `notzettel-id-format` variable.
+** DONE Get ID from string
+   Return first match for id in string. If no matches return nil.
+** DONE Enclose IDs in string with affixes
+   Replace matches for id regexp in string with link affixes.
+** DONE Get file by id
+   Search notzettel directory for file that matches id exactly. If match return the file-path else nil.
+* Creation
+** TODO [#A] fix: appending "archive to front of file titles"
+** DONE with id + title
+** DONE insert frontlink
+** DONE insert backlink
+** DONE with active region
+** other window
+** DONE with timestamp
+** DONE var: header-function /id/ /title/ /parent-id/ /parent-title/
+** DONE var: footer-function /id/ /title/ /parent-id/ /parent-title/
+* Links
+
+** DONE follow
+   - Search for link at point, if filename result contains ID then find file, if not (error message?) search? new file?
+** DONE search
+   - Perform notdeft search for thing at point
+** DONE copy link to current file
+   - Get filename, convert to link and copy it to kill ring
+** DONE insert link from list of archive files
+   - Insert link to file from minibuffer selection
+** DONE copy link of file in search buffer
+   - Copy link of file at point in search list
+* Tags
+** DONE Make list of all tags
+   Make list of all tags in all files that match regexp.
+** DONE Insert tag from list
+** TODO Search tag at point
+   - Note [2020-06-15 Mon 18:42]
+     Is this necessary?
+* Referencing
+** TODO setup ivy-bibtex
+* Search
+** DONE get file name of current item in notdeft search list
+   In Notdeft search buffer, when current item is a file return the file path else nil.
+* Viewing
+** DONE Highlight filter term in viewed file
+** TODO Highlight sentence matched by filter term
+   - option:
+     - [ ] highlight sentence
+     - [ ] word
+     - [ ] paragraph
+     - [ ] dim-not-matching
+     - [ ] invisible-not-matching.
+** DONE Preview file in reused buffer
+   Put contents of selected file in other window in *Notdeft Preview* buffer
+** DONE Next/previous line + view other window
+* Window / Buffer management
+** DONE Make option: restore windows when quiting notdeft buffer
+   - Note [2020-06-15 Mon 19:42]
+     The basics concept is done but needs to be done more thoroughly
+   - Store frame config before opening notdeft buffer and when closing restore it
+** DONE Make window options for opening notdeft buffer
+   - [X] reorganize-frame :: Show only two windows on the current frame, the current window and the agenda.
+   - [X] current-window :: open notdeft in the current window, keeping all other windows.
+   - [X] other-window :: Use ‘switch-to-buffer-other-window’ to display agenda.
+   - [X] only-window :: Show agenda, deleting all other windows.
+   - [ ] other-frame :: Use ‘switch-to-buffer-other-frame’ to display agenda. Also, when exiting the agenda, kill that frame.
+** TODO Begin: search session
+   - option: new notdeft query
+   - window config options:
+     - current window
+     - only window
+     - other window
+     - reconfigure window
+   - option: with new notdeft buffer
+   - option: kill buffers viewed in search (not the ones finally chosen to edit)
+** TODO search: preview
+   - window options:
+     - other window
+     - reconfigure window
+** TODO search: view
+   - window options
+     - other window
+     - reconfigure window
+     - current window
+     - only window
+** TODO search: edit
+   - window options
+     - other window
+     - reconfigure window
+     - current window
+     - only window
+** TODO search: quit view/edit
+   - Quit the view or edit then go back to the search
+   - option: also end the search
+   - option: kill buffer
+** TODO End: search session
+   - Quit the notdeft buffer.
+   - option: kill the notdeft buffer
+   - option: restore windows
+   - option: This is a prefix arg of the notdeft quit function
+   - option: kill preview buffer
+** TODO Choose file
+   - choose a file from the notdeft list and end search
+   - option: do not end search
