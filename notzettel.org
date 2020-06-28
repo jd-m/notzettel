@@ -9,7 +9,7 @@
 ** DONE Get file by id
    Search notzettel directory for file that matches id exactly. If match return the file-path else nil.
 * Creation
-** TODO [#A] fix: appending "archive to front of file titles"
+** DONE [#A] fix: appending "archive to front of file titles"
 ** DONE with id + title
 ** DONE insert frontlink
 ** DONE insert backlink
@@ -18,6 +18,8 @@
 ** DONE with timestamp
 ** DONE var: header-function /id/ /title/ /parent-id/ /parent-title/
 ** DONE var: footer-function /id/ /title/ /parent-id/ /parent-title/
+** TODO Create quick note creation
+   desc: a facility for creating a note quickly then going back to what you were doing. This is bacically org capture but I want a way to create the file and fill in the header/body/footer as I would a nz note
 * Links
 
 ** DONE follow
@@ -44,6 +46,9 @@
    In Notdeft search buffer, when current item is a file return the file path else nil.
 * Viewing
 ** DONE Highlight filter term in viewed file
+** DONE Preview file in reused buffer
+   Put contents of selected file in other window in *Notdeft Preview* buffer
+** DONE Next/previous line + view other window
 ** TODO Highlight sentence matched by filter term
    - option:
      - [ ] highlight sentence
@@ -51,9 +56,6 @@
      - [ ] paragraph
      - [ ] dim-not-matching
      - [ ] invisible-not-matching.
-** DONE Preview file in reused buffer
-   Put contents of selected file in other window in *Notdeft Preview* buffer
-** DONE Next/previous line + view other window
 * Window / Buffer management
 ** DONE Make option: restore windows when quiting notdeft buffer
    - Note [2020-06-15 Mon 19:42]
@@ -65,7 +67,8 @@
    - [X] other-window :: Use ‘switch-to-buffer-other-window’ to display agenda.
    - [X] only-window :: Show agenda, deleting all other windows.
    - [ ] other-frame :: Use ‘switch-to-buffer-other-frame’ to display agenda. Also, when exiting the agenda, kill that frame.
-** TODO Begin: search session
+* Search session
+** DONE Begin: search session
    - option: new notdeft query
    - window config options:
      - current window
@@ -73,7 +76,8 @@
      - other window
      - reconfigure window
    - option: with new notdeft buffer
-   - option: kill buffers viewed in search (not the ones finally chosen to edit)
+
+** TODO option: begin search sesiosn: with new/unique preview buffer
 ** TODO search: preview
    - window options:
      - other window
@@ -92,10 +96,9 @@
      - only window
 ** TODO search: quit view/edit
    - Quit the view or edit then go back to the search
-   - option: also end the search
-   - option: kill buffer
+   - option: kill buffer (default)
 ** TODO End: search session
-   - Quit the notdeft buffer.
+   - Quit the notdeft buffer (if view open quit the view)
    - option: kill the notdeft buffer
    - option: restore windows
    - option: This is a prefix arg of the notdeft quit function

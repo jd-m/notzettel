@@ -125,9 +125,6 @@
   (interactive "sTitle: ")
   (notzettel--generate-note (notzettel-generate-id) title nil nil))
 
- (defun notzettel-quick-note-function ()
-    "" )
-
 ;Links
 
 (defun notzettel-link-at-point ()
@@ -184,8 +181,7 @@
   (let ((id (notzettel-get-id-from-string file)))
     (when (string-match-p id file)
       (insert (notzettel--replace-id-with-link (file-name-base file)))
-      )
-    ))
+      )))
 
 ;Window layout
 (defvar notzettel-active-search nil
@@ -194,9 +190,20 @@
 (defun notzettel-get-create-search ()
   ""
   '((search-buffer .  notdeft-buffer)
-    (window-config-to-restore)
-    (preview-buffer .  "*Notzettel View*")
-    (viewed-files . '())))
+    (line-in-search-buffer . 0)
+    (pre-search-window-config)
+    (preview-buffer . "*Notzettel View*")
+    (pre-view-window-config)
+    (viewed-files)
+    ))
+
+(defun notzettel--set-search-element (key value)
+  ""
+  (setcdr (assq key notzettel-active-search) value))
+
+(defun notzettel--get-search-element (key)
+  ""
+  (cdr (assq key notzettel-active-search)))
 
 (defun notzettel--split-window-if-necessary ()
   ""
@@ -228,44 +235,35 @@
 	((eq notzettel-notdeft-window-setup 'other-window)
 	 (select-window (other-window))
 	 ))
-  (notdeft reset new)
-  )
+  (notdeft reset new))
 
-(defun notzettel-notdeft-start ()
+(defun notzettel-notdeft-start (&optional reset new)
   "Begin a new notzettel search session"
   (interactive)
   (setq notzettel-active-search (notzettel-get-create-search))
-  (setcdr (assq 'window-config-to-restore notzettel-active-search) (current-window-configuration))
-  (notzettel--setup-notdeft-buffer)
-  (setcdr (assq 'search-buffer notzettel-active-search) (current-buffer))
-
-  )
+  (notzettel--set-search-element 'pre-search-window-config (current-window-configuration))
+  (notzettel--setup-notdeft-buffer reset new)
+  (notzettel--set-search-element 'search-buffer (current-buffer)))
 
 (defun notzettel-notdeft-quit (prefix)
   "End the current notzettel search session"
   (interactive "P")
-  (set-buffer  (cdr (assq 'search-buffer notzettel-active-search)))
+  (set-buffer  (notzettel--get-search-element 'search-buffer))
   (notdeft-quit prefix)
-  (dolist  (viewed-file (cdr (assq 'viewed-files notzettel-active-search)))
-    (print "ya")
+
+  (while (< 0 (length (notzettel--get-search-element 'viewed-files)))
+    (let (buf))
+    (setq buf (car (notzettel--get-search-element 'viewed-files)))
+    (kill-buffer buf)
+    (notzettel--set-search-element 'viewed-files (cdr (notzettel--get-search-element 'viewed-files)))
     )
-  (set-window-configuration (cdr (assq 'window-config-to-restore notzettel-active-search)))
+
+  (set-window-configuration (notzettel--get-search-element 'pre-search-window-config))
+
   (setq notzettel-active-search nil)
   )
 
 ;Viewing
-(define-minor-mode notzettel-view-mode
-  "Minor mode for viewing notdeft files"
-  :lighter "notzettel"
-
-  (if notzettel-view-mode
-      (progn
-	(view-mode t)
-	(notdeft-note-mode t))
-    (progn
-      (view-mode nil)
-      )))
-
 (defvar notzettel-min-letters-to-view 3)
 
 (defun notzettel-file-path-at-point ()
@@ -298,12 +296,12 @@ Return nil if the point is not on a file widget or if not a valid title"
 	(overlay-put (make-overlay (match-beginning 0) (match-end 0)) 'face 'isearch)
 	))))
 
-(defun notzettel-highlight-file-other-window (file)
+(defun notzettel-preview-file (file &optional highlight)
   "Open file in other window and highlight filter string. This should be used from the notdeft buffer"
   (let ((word notdeft-filter-string) (prev-buffer))
 
     (when (stringp file)
-      (when (notzettel--should-search-word word)
+
 
 	(notzettel--split-window-if-necessary)
 
@@ -313,42 +311,40 @@ Return nil if the point is not on a file widget or if not a valid title"
 	(erase-buffer)
 	(insert-file-contents file nil)
 	(visual-line-mode t)
-	(notzettel--highlight-string-in-buffer word)
+	(when (notzettel--should-search-word word)
+	(when highlight
+	  (notzettel--highlight-string-in-buffer word))
+	)
 	(select-window (previous-window))
-	))))
+	)))
 
-(defun notzettel-highlight-file-in-list-other-window ()
+(defun notzettel-preview-highlight ()
   "In notdeft buffer show the current file in list in note-deft preview mode with highlighting"
-  (notzettel-highlight-file-other-window (notzettel-file-path-at-point)))
+  (notzettel-preview-file (notzettel-file-path-at-point) t))
+
+(defun notzettel-preview ()
+  ""
+  (interactive)
+  (notzettel-preview-file (notzettel-file-path-at-point))
+  )
 
 (defun notzettel-next-line-preview ()
   "Move to next line in notdeft buffer and preview file other window"
   (interactive)
   (next-line)
-  (notzettel-highlight-file-in-list-other-window))
+  (notzettel-preview-highlight))
 
 (defun notzettel-previous-line-preview ()
   "Move to previous line in notdeft buffer and preview file other window"
   (interactive)
   (previous-line)
-  (notzettel-highlight-file-in-list-other-window))
-
-(define-key notdeft-mode-map (kbd "C-n") 'notzettel-next-line-preview)
-(define-key notdeft-mode-map (kbd "C-p") 'notzettel-previous-line-preview)
+  (notzettel-preview-highlight))
 
 ;View
 
 (defvar notzettel--view-window-config nil)
 
 (defcustom notzettel-view-window-setup 'reorganize-frame
-  ""
-  :type '(choice
-	  (const reorganize-frame)
-	  (const current-window)
-	  (const only-window)
-	  (const other-window)))
-
-(defcustom notzettel-edit-window-setup 'current-window
   ""
   :type '(choice
 	  (const reorganize-frame)
@@ -372,45 +368,58 @@ Return nil if the point is not on a file widget or if not a valid title"
 	(split-window-sensibly)))
 
        (find-file file)
-       (view-mode editable)
-       (notdeft-note-mode 1)
+       (notzettel-view-mode t)
 
      )))
 
-(defun notzettel-view-file ()
+(defun notzettel-view-file (&optional editable)
   ""
   (interactive)
-  (notzettel-find-file-in-list notzettel-view-window-setup t)
-  (push (current-buffer) (cdr (assq 'viewed-files notzettel-active-search)))
+
+  (notzettel--set-search-element 'pre-view-window-config (current-window-configuration))
+  (notzettel--set-search-element 'line-in-search-buffer (line-number-at-pos))
+
+  (notzettel-find-file-in-list notzettel-view-window-setup editable)
+
+  (let (buf-list)
+    (setq buf-list (notzettel--get-search-element 'viewed-files))
+    (push (current-buffer) buf-list)
+    (notzettel--set-search-element 'viewed-files buf-list)
   )
 
-(defun notzettel-edit-file ()
-  ""
-  (interactive)
-  (notzettel-find-file-in-list notzettel-edit-window-setup 0)
-  (push (current-buffer) (cdr (assq 'viewed-files notzettel-active-search)))
-  ;no
   )
 
 (defun notzettel-quit-view (&optional restore-windows)
   "Whilst still in a search stop viewing/editing the current file"
   (interactive)
-  (let (buf)
-    (setq buf (current-buffer))
-    (print buf)
-    (delq buf (cdr (assq 'viewed-files notzettel-active-search)))
-    (buf)
-    )
+  (set-window-configuration (notzettel--get-search-element 'pre-view-window-config))
+  (goto-line (notzettel--get-search-element 'line-in-search-buffer))
   )
+
+(defun notzettel-view-toggle-editable ()
+  ""
+  (interactive)
+
+  (print view-mode)
+
+  (cond ((eq notzettel-view-only t)
+	 (view-mode 1)
+	 (print "read!")
+	  (setq notzettel-view-only nil))
+	((eq notzettel-view-only nil)
+	 (view-mode -1)
+	 (print "type!")
+	  (setq notzettel-view-only t))))
+
 
 (defun notzettel-select-file ()
   "Select the file in list and end the notzettel search"
   (interactive)
   (notzettel-find-file-in-list 'current-window 1)
-  ()
-)
-;make tag list
 
+  )
+
+;make tag list
 (defvar notzettel-tag-regex "[@|#][A-Za-z0-9_]+")
 (defvar notzettel-tag-list '())
 
@@ -428,11 +437,42 @@ Return nil if the point is not on a file widget or if not a valid title"
 (defun notzettel--extract-tags-from-all-files ()
   "Extract tags matching `notzettel-tag-regex` from notdeft dir"
   (dolist (file (notdeft-find-all-files-in-dir (notdeft-get-directory) t))
-    (notzettel--extract-tags-from-file file)
-    ))
+    (notzettel--extract-tags-from-file file)))
 
 (defun notzettel-insert-tag-from-list (tag)
   "Insert tag from list"
   (interactive
    (list (ivy-completing-read "Tag:" notzettel-tag-list)))
   (insert tag))
+
+; bindings
+
+(define-minor-mode notzettel-view-mode
+  "Get your foos in the right places."
+  :lighter " nz-view"
+  :keymap (let ((map (make-sparse-keymap)))
+	    (define-key map (kbd "C-c C-q") 'notzettel-quit-view)
+	    (define-key view-mode-map [remap View-exit] 'notzettel-quit-view)
+	    (define-key view-mode-map [remap View-quit] 'notzettel-quit-view)
+	    (define-key view-mode-map (kbd "<tab>") 'notzettel-quit-view)
+
+	    map)
+
+  (make-local-variable 'notzettel-view-only)
+  (setq notzettel-view-only t)
+  (notzettel-view-toggle-editable)
+  (notdeft-note-mode)
+  )
+
+(define-key notzettel-view-mode-map (kbd "C-c C-v") 'notzettel-view-toggle-editable)
+(define-key notzettel-view-mode-map [remap read-only-mode] 'notzettel-view-toggle-editable)
+(define-key notzettel-view-mode-map (kbd "s-<tab>") 'notzettel-view-toggle-editable)
+
+(define-key notdeft-mode-map (kbd "C-c ?") 'notzettel-preview)
+(define-key notdeft-mode-map (kbd "C-n") 'notzettel-next-line-preview)
+(define-key notdeft-mode-map (kbd "C-p") 'notzettel-previous-line-preview)
+(define-key notdeft-mode-map (kbd "<tab>") 'notzettel-view-file)
+
+(define-key notdeft-mode-map [remap notdeft-quit] 'notzettel-notdeft-quit)
+
+(defalias 'nz 'notzettel-notdeft-start)
