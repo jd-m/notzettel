@@ -301,32 +301,20 @@ Return nil if the point is not on a file widget or if not a valid title"
   (let ((word notdeft-filter-string) (prev-buffer))
 
     (when (stringp file)
-      ;(notzettel--split-window-if-necessary)
-
-      ;(select-window (next-window))
-      ;(set-buffer (get-buffer-create "*Notzettel View*"))
-      ;(set-window-buffer (selected-window) "*Notzettel View*")
-      ;(erase-buffer)
-      ;(insert-file-contents file nil)
-					;(visual-line-mode t)
-
-
-      (with-temp-buffer-window "*Notzettel View*" 'display-buffer-pop-up-window
-			       t
-			       (let (str)
-				 (with-temp-buffer
-				   (insert-file-contents file nil)
-				   (setq str (buffer-string))
-				   )
-				 (print str)
-				 )
+      (set-buffer (get-buffer-create "*Notzettel View*"))
+      (read-only-mode -1)
+      (erase-buffer)
+      (insert "***PREVIEW ONLY***\n\n")
+      (insert-file-contents file nil)
+      (visual-line-mode t)
+      (read-only-mode 1)
+      (display-buffer "*Notzettel View*" 'display-buffer-use-some-window)
 
       (when (notzettel--should-search-word word)
 	(when highlight
 	  (notzettel--highlight-string-in-buffer word)))
-      )
-      ;(select-window (previous-window))
-		     )))
+      )))
+
 
 (defun notzettel-preview-highlight ()
   "In notdeft buffer show the current file in list in note-deft preview mode with highlighting"
@@ -457,6 +445,19 @@ Return nil if the point is not on a file widget or if not a valid title"
 
 ; bindings
 
+(define-minor-mode notzettel-follow-mode
+  "Get your foos in the right places."
+  :lighter " nz-follow"
+  :keymap (let ((map (make-sparse-keymap)))
+	    (define-key map [remap next-line] 'notzettel-next-line-preview)
+	    (define-key map [remap previous-line] 'notzettel-previous-line-preview)
+	    map)
+  (cond ((eq notzettel-follow-mode t)
+	 (notzettel-preview))
+	((eq notzettel-follow-mode nil)
+	 (kill-buffer "*Notzettel View*")))
+  )
+
 (define-minor-mode notzettel-view-mode
   "Get your foos in the right places."
   :lighter " nz-view"
@@ -477,9 +478,7 @@ Return nil if the point is not on a file widget or if not a valid title"
 (define-key notzettel-view-mode-map [remap read-only-mode] 'notzettel-view-toggle-editable)
 (define-key notzettel-view-mode-map (kbd "s-<tab>") 'notzettel-view-toggle-editable)
 
-(define-key notdeft-mode-map (kbd "C-c ?") 'notzettel-preview)
-(define-key notdeft-mode-map (kbd "C-n") 'notzettel-next-line-preview)
-(define-key notdeft-mode-map (kbd "C-p") 'notzettel-previous-line-preview)
+(define-key notdeft-mode-map (kbd "C-c C-f") 'notzettel-follow-mode)
 (define-key notdeft-mode-map (kbd "<tab>") 'notzettel-view-file)
 
 (define-key notdeft-mode-map [remap notdeft-quit] 'notzettel-notdeft-quit)
