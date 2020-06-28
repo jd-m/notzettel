@@ -301,18 +301,32 @@ Return nil if the point is not on a file widget or if not a valid title"
   (let ((word notdeft-filter-string) (prev-buffer))
 
     (when (stringp file)
-      (notzettel--split-window-if-necessary)
+      ;(notzettel--split-window-if-necessary)
 
-      (select-window (next-window))
-      (set-buffer (get-buffer-create "*Notzettel View*"))
-      (set-window-buffer (selected-window) "*Notzettel View*")
-      (erase-buffer)
-      (insert-file-contents file nil)
-      (visual-line-mode t)
+      ;(select-window (next-window))
+      ;(set-buffer (get-buffer-create "*Notzettel View*"))
+      ;(set-window-buffer (selected-window) "*Notzettel View*")
+      ;(erase-buffer)
+      ;(insert-file-contents file nil)
+					;(visual-line-mode t)
+
+
+      (with-temp-buffer-window "*Notzettel View*" 'display-buffer-pop-up-window
+			       t
+			       (let (str)
+				 (with-temp-buffer
+				   (insert-file-contents file nil)
+				   (setq str (buffer-string))
+				   )
+				 (print str)
+				 )
+
       (when (notzettel--should-search-word word)
 	(when highlight
 	  (notzettel--highlight-string-in-buffer word)))
-      (select-window (previous-window)))))
+      )
+      ;(select-window (previous-window))
+		     )))
 
 (defun notzettel-preview-highlight ()
   "In notdeft buffer show the current file in list in note-deft preview mode with highlighting"
