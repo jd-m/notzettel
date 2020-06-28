@@ -301,22 +301,18 @@ Return nil if the point is not on a file widget or if not a valid title"
   (let ((word notdeft-filter-string) (prev-buffer))
 
     (when (stringp file)
+      (notzettel--split-window-if-necessary)
 
-
-	(notzettel--split-window-if-necessary)
-
-	(select-window (next-window))
-	(set-buffer (get-buffer-create "*Notzettel View*"))
-	(set-window-buffer (selected-window) "*Notzettel View*")
-	(erase-buffer)
-	(insert-file-contents file nil)
-	(visual-line-mode t)
-	(when (notzettel--should-search-word word)
+      (select-window (next-window))
+      (set-buffer (get-buffer-create "*Notzettel View*"))
+      (set-window-buffer (selected-window) "*Notzettel View*")
+      (erase-buffer)
+      (insert-file-contents file nil)
+      (visual-line-mode t)
+      (when (notzettel--should-search-word word)
 	(when highlight
-	  (notzettel--highlight-string-in-buffer word))
-	)
-	(select-window (previous-window))
-	)))
+	  (notzettel--highlight-string-in-buffer word)))
+      (select-window (previous-window)))))
 
 (defun notzettel-preview-highlight ()
   "In notdeft buffer show the current file in list in note-deft preview mode with highlighting"
@@ -455,7 +451,6 @@ Return nil if the point is not on a file widget or if not a valid title"
 	    (define-key view-mode-map [remap View-exit] 'notzettel-quit-view)
 	    (define-key view-mode-map [remap View-quit] 'notzettel-quit-view)
 	    (define-key view-mode-map (kbd "<tab>") 'notzettel-quit-view)
-
 	    map)
 
   (make-local-variable 'notzettel-view-only)

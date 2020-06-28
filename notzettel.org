@@ -68,41 +68,55 @@
    - [X] only-window :: Show agenda, deleting all other windows.
    - [ ] other-frame :: Use ‘switch-to-buffer-other-frame’ to display agenda. Also, when exiting the agenda, kill that frame.
 * Search session
-** DONE Begin: search session
-   - option: new notdeft query
-   - window config options:
-     - current window
-     - only window
-     - other window
-     - reconfigure window
-   - option: with new notdeft buffer
+**
+
+** TODO Begin: search session
+   - [ ] option: new notdeft query
+   - [ ] window config options:
+     - [ ] current window
+     - [ ] only window
+     - [ ] other window
+     - [ ] reconfigure window
+   - [ ] option: with new notdeft buffer
 
 ** TODO option: begin search sesiosn: with new/unique preview buffer
 ** TODO search: preview
-   - window options:
-     - other window
-     - reconfigure window
+   - [ ] window options:
+     - [ ] other window
+     - [ ] reconfigure window
+   - [ ] make temporary: any change closes the window
+   - [ ] save fonfig before preview and restore after closing preview
 ** TODO search: view
-   - window options
-     - other window
-     - reconfigure window
-     - current window
-     - only window
+   - [ ] window options
+     - [ ] other window
+     - [ ] reconfigure window
+     - [ ] current window
+     - [ ] only window
 ** TODO search: edit
-   - window options
-     - other window
-     - reconfigure window
-     - current window
-     - only window
-** TODO search: quit view/edit
-   - Quit the view or edit then go back to the search
-   - option: kill buffer (default)
-** TODO End: search session
-   - Quit the notdeft buffer (if view open quit the view)
-   - option: kill the notdeft buffer
-   - option: restore windows
-   - option: This is a prefix arg of the notdeft quit function
-   - option: kill preview buffer
+   - [ ] window options
+     - [ ] other window
+     - [ ] reconfigure window
+     - [ ] current window
+     - [ ] only window
+** DONE search: quit view/edit
+   - [ ] Quit the view or edit then go back to the search
+   - [ ] option: kill buffer (default)
+** DONE End: search session
+   - [ ] Quit the notdeft buffer (if view open quit the view)
+   - [ ] option: kill the notdeft buffer
+   - [ ] option: restore windows
+   - [ ] option: This is a prefix arg of the notdeft quit function
+   - [ ] option: kill preview buffer
+** TODO End search session withou restoring windows
+   would use this when you find a file and want to end a search and do not want to go back to original config
+
 ** TODO Choose file
-   - choose a file from the notdeft list and end search
-   - option: do not end search
+   - [ ] choose a file from the notdeft list and end search
+   - [ ] option: do not end search
+
+* Notzettel Notdeft Mode
+** TODO when using notzettel-notdeft start minor mode
+   Instead of a list of variables use  minor mode with buffer local variables
+** TODO notzettel increment-filter-string
+   For quitting preview if it is open as soon as filter string is changed
+   run notdeft increment/decrement string
