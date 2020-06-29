@@ -11,7 +11,6 @@
 (defvar notzettel-link-prefix "[[")
 (defvar notzettel-link-suffix "]]")
 
-
 (defun notzettel-clean-string (string)
   "Remove extra whitespace and trim ends"
   (s-trim (s-collapse-whitespace string))
@@ -189,12 +188,11 @@
 (defvar-local notzettel-pre-search-window-config nil)
 (defvar-local notzettel-pre-view-window-config nil)
 (defvar-local notzettel-preview-buffer nil)
-;(defvar-local notzettel-pre-view-window-config nil)
 (defvar-local notzettel-viewed-files-list nil)
-(defvar-local notzettel-search-livep nil)
+(defvar-local notzettel-search-live nil)
 (defvar-local notzettel-line-goto nil)
-
-(defconst notzettel-preview-buffer-name "*NotZettel Preview*")
+(defvar-local notzettel-preview-buffer-name nil)
+(defconst notzettel-preview-buffer-basename "*NotZettel Preview*")
 (defvar notzettel-restore-window t)
 
 (define-minor-mode notzettel-notdeft-mode
@@ -207,9 +205,24 @@
 
 (defun notzettel-new-search ()
   ""
-  (setq notzettel-pre-search-window-config (current-window-configuration))
+
+  (setq notzettel-preview-buffer-name (generate-new-buffer-name notzettel-preview-buffer-basename))
+
   (setq notzettel-preview-buffer (get-buffer-create notzettel-preview-buffer-name))
-  (setq notzettel-search-livep t)
+
+  (setq notzettel-search-live t)
+  )
+
+(defun notzettel-clear-search ()
+  ""
+  (while (< 0 (length notzettel-viewed-files-list))
+    (let (buf)
+      (setq buf (car notzettel-viewed-files-list))
+      (kill-buffer buf)
+      (setq notzettel-viewed-files-list (cdr notzettel-viewed-files-list)))
+    )
+
+  (notzettel-follow-mode -1)
   )
 
 (defun notzettel--split-window-if-necessary ()
@@ -245,47 +258,49 @@
 (defun notzettel-notdeft-start (&optional reset new)
   "Begin a new notzettel search session"
   (interactive)
+  (let (win-config)
 
-  (cond ((eq notzettel-search-livep nil)
-	 (let (win-config)
-	   (setq win-config (current-window-configuration))
-	   (notzettel--setup-window)
-	   (notdeft)
+    (when notzettel-restore-window
+      (setq win-config (current-window-configuration)))
+
+    (notzettel--setup-window)
+    (notdeft reset new)
+    (notzettel-notdeft-mode)
+
+    (cond ((eq notzettel-search-live nil)
 	   (setq notzettel-pre-search-window-config win-config)
-	   (setq notzettel-preview-buffer (get-buffer-create notzettel-preview-buffer-name))
-	   (setq notzettel-search-livep t)
-
-	   ))
-	((eq notzettel-search-livep t)
-	 ((notzettel--setup-window)
-	   (notdeft))
-	 )
-	)
-
-  (notzettel-notdeft-mode)
-
-  )
+	   (notzettel-new-search)
+	   )
+	  ((eq notzettel-search-live t)
+	   (when reset
+	     (notzettel-clear-search))))))
 
 (defun notzettel-notdeft-quit (prefix)
   "End the current notzettel search session"
   (interactive "P")
+  (notzettel-end-search prefix t)
 
-  (while (< 0 (length notzettel-viewed-files-list))
+  )
+
+(defun notzettel-end-search (prefix &optional restore-window)
+  ""
+  (notzettel-clear-search)
+  (setq notzettel-search-live nil)
+
+  (when (eq prefix '(16))
     (let (buf)
-    (setq buf (car notzettel-viewed-files-list))
-    (kill-buffer buf)
-    (setq notzettel-viewed-files-list (cdr notzettel-viewed-files-list)))
-    )
+      (setq buf (current-buffer))
+      (dolist (nbuf (notdeft-buffer-list))
+	(set-buffer nbuf)
+	(notzettel-clear-search))
+      (set-buffer buf)
+      ))
 
-  (setq notzettel-search-livep nil)
-
-  (if notzettel-restore-window
-      (let (win-config)
-    (setq win-config notzettel-pre-search-window-config)
-    (notdeft-quit prefix)
-    (set-window-configuration win-config)
-    )
-
+  (let (win-config)
+    (if notzettel-restore-window
+	(setq win-config notzettel-pre-search-window-config)
+      (notdeft-quit prefix)
+      (set-window-configuration win-config))
     (notdeft-quit prefix))
   )
 
@@ -350,7 +365,6 @@ Return nil if the point is not on a file widget or if not a valid title"
 (defun notzettel-preview ()
   ""
   (interactive)
-
   (notzettel-preview-file (notzettel-file-path-at-point))
   )
 
@@ -392,8 +406,8 @@ Return nil if the point is not on a file widget or if not a valid title"
        ((eq window-setup 'reorganize-frame)
 	(delete-other-windows)
 	(split-window-sensibly)))
-       (find-file file)
-       (notzettel-view-mode t)
+      (find-file file)
+	(notdeft-note-mode)
      )))
 
 (defun notzettel-view-file ()
@@ -407,6 +421,7 @@ Return nil if the point is not on a file widget or if not a valid title"
     (setq win-config (current-window-configuration))
     (setq notdeft-buf (current-buffer))
     (notzettel-find-file-in-list notzettel-view-window-setup)
+    (notzettel-view-mode t)
     (setq view-buf (current-buffer))
     (setq notzettel-pre-view-window-config win-config)
     (save-excursion
@@ -431,10 +446,13 @@ Return nil if the point is not on a file widget or if not a valid title"
 	  (setq notzettel-view-only t))))
 
 
-(defun notzettel-select-file ()
+(defun notzettel-select-file (prefix)
   "Select the file in list and end the notzettel search"
-  (interactive)
-  (notzettel-find-file-in-list 'current-window 1))
+  (interactive "P")
+  (notzettel-clear-search)
+  (setq notzettel-search-live nil)
+  (notzettel-find-file-in-list 'current-window)
+  )
 
 ;make tag list
 (defvar notzettel-tag-regex "[@|#][A-Za-z0-9_]+")
@@ -499,9 +517,8 @@ Return nil if the point is not on a file widget or if not a valid title"
   (notdeft-note-mode)
   )
 
-(define-key notzettel-view-mode-map (kbd "C-c C-v") 'notzettel-view-toggle-editable)
 (define-key notzettel-view-mode-map [remap read-only-mode] 'notzettel-view-toggle-editable)
-(define-key notzettel-view-mode-map (kbd "s-<tab>") 'notzettel-view-toggle-editable)
+(define-key notzettel-view-mode-map (kbd "<esc>") 'notzettel-view-toggle-editable)
 
 (define-key notdeft-mode-map (kbd "C-c C-f") 'notzettel-follow-mode)
 (define-key notdeft-mode-map (kbd "<tab>") 'notzettel-view-file)

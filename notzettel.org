@@ -50,12 +50,15 @@
    Put contents of selected file in other window in *Notdeft Preview* buffer
 ** DONE Next/previous line + view other window
 ** TODO Highlight sentence matched by filter term
+   - match type variable: sentence/paragraph/wor
+   - not matching behaviour: dim/delete
    - option:
      - [ ] highlight sentence
      - [ ] word
      - [ ] paragraph
      - [ ] dim-not-matching
      - [ ] invisible-not-matching.
+** TODO View mode with highlighting until edit
 * Window / Buffer management
 ** DONE Make option: restore windows when quiting notdeft buffer
    - Note [2020-06-15 Mon 19:42]
@@ -70,34 +73,6 @@
 * Search session
 **
 
-** TODO Begin: search session
-   - [ ] option: new notdeft query
-   - [ ] window config options:
-     - [ ] current window
-     - [ ] only window
-     - [ ] other window
-     - [ ] reconfigure window
-   - [ ] option: with new notdeft buffer
-
-** TODO option: begin search sesiosn: with new/unique preview buffer
-** TODO search: preview
-   - [ ] window options:
-     - [ ] other window
-     - [ ] reconfigure window
-   - [ ] make temporary: any change closes the window
-   - [ ] save fonfig before preview and restore after closing preview
-** TODO search: view
-   - [ ] window options
-     - [ ] other window
-     - [ ] reconfigure window
-     - [ ] current window
-     - [ ] only window
-** TODO search: edit
-   - [ ] window options
-     - [ ] other window
-     - [ ] reconfigure window
-     - [ ] current window
-     - [ ] only window
 ** DONE search: quit view/edit
    - [ ] Quit the view or edit then go back to the search
    - [ ] option: kill buffer (default)
@@ -107,13 +82,8 @@
    - [ ] option: restore windows
    - [ ] option: This is a prefix arg of the notdeft quit function
    - [ ] option: kill preview buffer
-** TODO End search session withou restoring windows
-   would use this when you find a file and want to end a search and do not want to go back to original config
-
-** TODO Choose file
-   - [ ] choose a file from the notdeft list and end search
-   - [ ] option: do not end search
-
+** DONE Choose file
+   - [X] choose a file from the notdeft list and end search
 * Notzettel Notdeft Mode
 ** DONE notzettel-notdeft-mode
    - Desc: minor mode with remapped finctinos and buffer local variables.
@@ -125,18 +95,15 @@
      - pre-view-window-config
      - viewed-files-list
      - live-searchp :: if search is being performed with buffer
-** TODO nznd: search basic
+** DONE nznd: search basic
    - [X] if no botdeft buffer make one
    - [X] if buffer exists and search is live
      - go to live search
    - [X] if buffer exists but search is not live:
      - new live search
-   - [ ] opt: reset: reset search
-     - quit previous search if live, reset and begin new search
-   - [ ] opt: new: make new notdeft buffer with new search
-   - [ ] set pre-search-window-config
-   - reset follow mode
-   - reset-preview-buffer
-** TODO notzettel increment-filter-string
-   For quitting preview if it is open as soon as filter string is changed
-   run notdeft increment/decrement string
+   - [X] opt: reset: reset search
+     - clear search if live
+   - [X] opt: new: make new notdeft buffer with new search
+   - [X] set pre-search-window-config
+   - [X] reset follow mode
+   - [X] reset-preview-buffer
