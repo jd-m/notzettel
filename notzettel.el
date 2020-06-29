@@ -195,31 +195,21 @@
 (defvar-local notzettel-line-goto nil)
 
 (defconst notzettel-preview-buffer-name "*NotZettel Preview*")
+(defvar notzettel-restore-window t)
 
 (define-minor-mode notzettel-notdeft-mode
   "Get your foos in the right places."
   :lighter " nz"
   :keymap (let ((map (make-sparse-keymap)))
 	    map)
-  ;(notzettel-reset-search)
+
 )
 
 (defun notzettel-new-search ()
   ""
   (setq notzettel-pre-search-window-config (current-window-configuration))
   (setq notzettel-preview-buffer (get-buffer-create notzettel-preview-buffer-name))
-
-)
-
-(defun notzettel-clear-search ()
-  ""
-
-)
-
-(defun notzettel-reset-search ()
-  ""
-  (setq notzettel-pre-search-window-config (current-window-configuration))
-
+  (setq notzettel-search-livep t)
   )
 
 (defun notzettel--split-window-if-necessary ()
@@ -238,8 +228,7 @@
 (defun notzettel--setup-window ()
   "Setup the notdeft window buffer"
 
-  (cond ((eq notzettel-notdeft-window-setup 'current-window)
-	 )
+  (cond ((eq notzettel-notdeft-window-setup 'current-window))
 	((eq notzettel-notdeft-window-setup 'reorganize-frame)
 	 (let ((saved-buffer (current-buffer)))
 	   (delete-other-windows)
@@ -256,37 +245,49 @@
 (defun notzettel-notdeft-start (&optional reset new)
   "Begin a new notzettel search session"
   (interactive)
+
+  (cond ((eq notzettel-search-livep nil)
+	 (let (win-config)
+	   (setq win-config (current-window-configuration))
+	   (notzettel--setup-window)
+	   (notdeft)
+	   (setq notzettel-pre-search-window-config win-config)
+	   (setq notzettel-preview-buffer (get-buffer-create notzettel-preview-buffer-name))
+	   (setq notzettel-search-livep t)
+
+	   ))
+	((eq notzettel-search-livep t)
+	 ((notzettel--setup-window)
+	   (notdeft))
+	 )
+	)
+
   (notzettel-notdeft-mode)
-  (let (win-config)
-    (setq win-config (current-window-configuration))
 
-    (notzettel--setup-window)
-    (notdeft reset new)
-    (print (current-buffer))
-    (setq notzettel-pre-search-window-config win-config)
-
-    (setq notzettel-preview-buffer (get-buffer-create notzettel-preview-buffer-name))
-    (notzettel-follow-mode)))
+  )
 
 (defun notzettel-notdeft-quit (prefix)
   "End the current notzettel search session"
   (interactive "P")
-  (let (win-config)
 
-    (setq win-config notzettel-pre-search-window-config)
-    (print win-config)
-
-    (while (< 0 (length notzettel-viewed-files-list))
-    (let (buf))
+  (while (< 0 (length notzettel-viewed-files-list))
+    (let (buf)
     (setq buf (car notzettel-viewed-files-list))
     (kill-buffer buf)
-    (setq notzettel-viewed-files-list (cdr notzettel-viewed-files-list))
+    (setq notzettel-viewed-files-list (cdr notzettel-viewed-files-list)))
     )
 
-    (notdeft-quit prefix)
+  (setq notzettel-search-livep nil)
 
+  (if notzettel-restore-window
+      (let (win-config)
+    (setq win-config notzettel-pre-search-window-config)
+    (notdeft-quit prefix)
     (set-window-configuration win-config)
-  ))
+    )
+
+    (notdeft-quit prefix))
+  )
 
 ;Viewing
 (defvar notzettel-min-letters-to-view 3)

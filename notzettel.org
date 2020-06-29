@@ -125,19 +125,18 @@
      - pre-view-window-config
      - viewed-files-list
      - live-searchp :: if search is being performed with buffer
-** TODO nznd: search
-   - if no botdeft buffer make one
-     - if buffer exists but search is not live:
-       - reset and new live search
-     - if buffer exists and search is live
-       - go to live search
-     - opt: reset: reset search
-       - quit previous search if live, reset and begin new search
-     - opt: new: make new notdeft buffer with new search
-   - set pre-search-window-config
+** TODO nznd: search basic
+   - [X] if no botdeft buffer make one
+   - [X] if buffer exists and search is live
+     - go to live search
+   - [X] if buffer exists but search is not live:
+     - new live search
+   - [ ] opt: reset: reset search
+     - quit previous search if live, reset and begin new search
+   - [ ] opt: new: make new notdeft buffer with new search
+   - [ ] set pre-search-window-config
    - reset follow mode
    - reset-preview-buffer
 ** TODO notzettel increment-filter-string
    For quitting preview if it is open as soon as filter string is changed
    run notdeft increment/decrement string
-** TODO bury preview before view
