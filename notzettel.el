@@ -11,6 +11,31 @@
 (defvar notzettel-link-prefix "[[")
 (defvar notzettel-link-suffix "]]")
 
+(defvar notzettel-highlight-element 'sentence)
+
+(defvar notzettel-note-header-function 'notzettel-generate-note-header)
+(defvar notzettel-note-footer-function 'notzettel-generate-note-footer)
+
+(defconst notzettel-preview-buffer-basename "*NotZettel Preview*")
+
+(defvar notzettel-restore-window t)
+(defvar notzettel-pre-search-window-config nil)
+(defvar notzettel-pre-view-window-config nil)
+(defvar notzettel-preview-buffer nil)
+(defvar notzettel-viewed-files-list nil)
+(defvar notzettel-search-live nil)
+(defvar notzettel-line-goto nil)
+(defvar notzettel-preview-buffer-name nil)
+
+(defvar notzettel-min-letters-to-view 3)
+
+(defvar notzettel-completing-read-function 'ivy-completing-read)
+
+(defvar notzettel-tag-regex "[@|#][A-Za-z0-9_]+")
+(defvar notzettel-tag-list '())
+
+(defvar notzettel-view-highlight t)
+
 (defun notzettel-clean-string (string)
   "Remove extra whitespace and trim ends"
   (s-trim (s-collapse-whitespace string))
@@ -31,8 +56,7 @@
   (let ((extracted-id))
     (when (string-match notzettel-id-regex str)
       (setq extracted-id (substring str (match-beginning 0) (match-end 0)))
-      extracted-id))
-  )
+      extracted-id)))
 
 (defun notzettel--add-link-affixes (str)
   "Add link prefix and link suffix to STR"
@@ -92,8 +116,6 @@
   nil
   )
 
-(defvar notzettel-note-header-function 'notzettel-generate-note-header)
-(defvar notzettel-note-footer-function 'notzettel-generate-note-footer)
 
 (defun notzettel--generate-note (id title &optional content parent-link)
   "Create a note in the default notdeft directory"
@@ -171,7 +193,7 @@
 
 ;Insert link of file
 
-(defvar notzettel-completing-read-function 'ivy-completing-read)
+
 
 (defun notzettel-insert-link-to-note (file)
   ""
@@ -184,17 +206,6 @@
 
 ;Window layout
 
-(defconst notzettel-preview-buffer-basename "*NotZettel Preview*")
-(defvar notzettel-restore-window t)
-
-
-(defvar notzettel-pre-search-window-config nil)
-(defvar notzettel-pre-view-window-config nil)
-(defvar notzettel-preview-buffer nil)
-(defvar notzettel-viewed-files-list nil)
-(defvar notzettel-search-live nil)
-(defvar notzettel-line-goto nil)
-(defvar notzettel-preview-buffer-name nil)
 
 (define-minor-mode notzettel-notdeft-mode
   "Get your foos in the right places."
@@ -315,7 +326,7 @@
   )
 
 ;Viewing
-(defvar notzettel-min-letters-to-view 3)
+
 
 (defun notzettel-file-path-at-point ()
   "Return the name of the file represented by the widget at the point.
@@ -337,31 +348,42 @@ Return nil if the point is not on a file widget or if not a valid title"
   (let ((file (notzettel-file-path-at-point)))
     (kill-new (notzettel--replace-id-with-link (file)))))
 
-(defun notzettel-highlight-filter-string (string &optional hl-scope)
+(setq sentence-end "[^.].[.?!]+\\([]\"')}]*\\|<[^>]+>\\)\\($\\| $\\|\t\\| \\)[ \t\n]*\\|\n")
+
+(defun notzettel-highlight-filter-string (string)
   "Highlight matches of a search term in buffer"
-  (let ((words (split-string string)) progress)
-    (remove-overlays)
+  (let ((words (split-string string)) progress fwd-elem bwd-elem)
+    (remove-overlays (point-min) (point-max) 'category 'notzettel-filter-string)
+
+    (cond ((eq notzettel-highlight-element 'word)
+	   (setq fwd-elem 'forward-word)
+	   (setq bwd-elem 'backward-word))
+	  ((eq notzettel-highlight-element 'sentence)
+	   (setq fwd-elem 'forward-sentence)
+	   (setq bwd-elem 'backward-sentence))
+	  ((eq notzettel-highlight-element 'paragraph)
+	   (setq fwd-elem 'forward-paragraph)
+	   (setq bwd-elem 'backward-paragraph)))
 
     (dolist (word words)
-
-      (setq progress (point-max))
-      (goto-char (point-max))
-      (while (re-search-backward word nil t)
-	(let (beg end)
-	  (when (> progress (point))
-	  (forward-sentence)
-	  (setq end (point))
-	  (backward-sentence)
-	  (setq beg (point))
-	  (setq progress (point))
-	  (overlay-put (make-overlay beg end) 'face 'anzu-match-3)
-	  )
-	  )
-	))
-
+      (when notzettel-highlight-element
+	(setq progress (point-max))
+	(goto-char (point-max))
+	(while (re-search-backward word nil t)
+	  (let (beg end ov)
+	    (when (> progress (point))
+	      (funcall fwd-elem)
+	      (setq end (point))
+	      (funcall bwd-elem)
+	      (setq beg (point))
+	      (setq progress (point))
+	      (setq ov (make-overlay beg end))
+	      (overlay-put ov 'category 'notzettel-filter-string)
+	      (overlay-put ov 'face 'anzu-match-3)))))
+      )
     ))
 
-(defun notzettel-preview-file (file &optional highlight)
+(defun notzettel-preview-file (file)
   "Open file in other window and highlight filter string. This should be used from the notdeft buffer"
 
   (let ((word notdeft-filter-string) (prev-buffer))
@@ -377,14 +399,15 @@ Return nil if the point is not on a file widget or if not a valid title"
       (display-buffer (buffer-name notzettel-preview-buffer) 'display-buffer-use-some-window)
 
       (when (notzettel--should-search-word word)
-	(when highlight
-	  (notzettel-highlight-filter-string word)))
+	(when notzettel-view-highlight
+	  (notzettel-highlight-filter-string word)
+	  ))
       )))
 
 
 (defun notzettel-preview-highlight ()
   "In notdeft buffer show the current file in list in note-deft preview mode with highlighting"
-  (notzettel-preview-file (notzettel-file-path-at-point) t))
+  (notzettel-preview-file (notzettel-file-path-at-point)))
 
 (defun notzettel-preview ()
   ""
@@ -420,16 +443,21 @@ Return nil if the point is not on a file widget or if not a valid title"
   (setq notzettel-pre-view-window-config (current-window-configuration))
   (setq notzettel-line-goto (line-number-at-pos))
 
-  (let ((file (notzettel-file-path-at-point)) notdeft-buf win-config view-buf)
+  (let ((file (notzettel-file-path-at-point)) notdeft-buf win-config view-buf word)
 
     (when  file
       (print file)
       (setq win-config (current-window-configuration))
       (setq notdeft-buf (current-buffer))
+      (setq word notdeft-filter-string)
 
       (notzettel--setup-window 'other-window)
       (notdeft-find-file file)
       (notzettel-view-mode t)
+
+      (when word
+	(setq notzettel-view-highlight-string word)
+	  (notzettel-highlight-filter-string word))
 
       (setq view-buf (current-buffer))
       (setq notzettel-pre-view-window-config win-config)
@@ -449,9 +477,16 @@ Return nil if the point is not on a file widget or if not a valid title"
   (interactive)
   (cond ((eq notzettel-view-only t)
 	 (view-mode 1)
-	  (setq notzettel-view-only nil))
+	 (setq notzettel-view-only nil)
+
+	 (let ((word notzettel-view-highlight-string))
+	   (when word
+	     (notzettel-highlight-filter-string word)
+	     ))
+	 )
 	((eq notzettel-view-only nil)
 	 (view-mode -1)
+	 (remove-overlays (point-min) (point-max) 'category 'notzettel-filter-string)
 	  (setq notzettel-view-only t))))
 
 
@@ -465,8 +500,6 @@ Return nil if the point is not on a file widget or if not a valid title"
       (notzettel-find-file-in-list file 'current-window))))
 
 ;make tag list
-(defvar notzettel-tag-regex "[@|#][A-Za-z0-9_]+")
-(defvar notzettel-tag-list '())
 
 (defun notzettel--extract-tags-from-file (file)
   (with-temp-buffer
@@ -510,6 +543,8 @@ Return nil if the point is not on a file widget or if not a valid title"
 	 ))
   )
 
+(defvar notzettel-view-highlight-string nil)
+
 (define-minor-mode notzettel-view-mode
   "Get your foos in the right places."
   :lighter " nz-view"
@@ -522,6 +557,7 @@ Return nil if the point is not on a file widget or if not a valid title"
 
   (make-local-variable 'notzettel-view-only)
   (make-local-variable 'notzettel-pre-view-window-config)
+  (make-local-variable 'notzettel-view-highlight-string)
   (setq notzettel-view-only t)
   (notzettel-view-toggle-editable)
   (notdeft-note-mode)
