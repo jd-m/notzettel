@@ -1,0 +1,24 @@
+Setup notdeft first.
+
+* Start
+
+M-x notzettel 
+or M-x nz (an alias)
+
+* Search
+Type to search
+
+* Follow view
+C-c C-f when in search
+
+* View File
+Tab to find file in view mode.
+Tab got back to search.
+
+* New note
+new note: C-c z n
+The default note header function asks for tags and if you want to make a backlink. 
+
+* New note in place
+C-c z x
+Kill content id region selected, leave a link behind and make a new note with the content
