@@ -1,24 +1,29 @@
 Setup notdeft first.
 
-* Start
+* Basic usage 
 
+** Start a search
 M-x notzettel 
-or M-x nz (an alias)
-
-* Search
+** Search
 Type to search
 
-* Follow view
+** Follow view
 C-c C-f when in search
 
-* View File
+** Viewing Files in Notdeft Search
 Tab to find file in view mode.
 Tab got back to search.
 
-* New note
-new note: C-c z n
-The default note header function asks for tags and if you want to make a backlink. 
+** New notes
+notzettel-new-note: make a new note.
+notzettel-new-note-in-place: make a new note, kill content of active region, leave a link behind and insert content into new note.
 
-* New note in place
-C-c z x
-Kill content id region selected, leave a link behind and make a new note with the content
+** Follow link
+notzettel-follow-link-at-point: search for id of link at point and open it if found
+
+* Example config
+
+   (add-to-list 'load-path "~/.emacs.d/notzettel")
+   (require 'notzettel)
+   (define-key global-map (kbd "C-c z n") 'notzettel-new-note)
+   (defalias 'nz 'notzettel-notdeft-start)
